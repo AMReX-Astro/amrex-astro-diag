@@ -63,109 +63,66 @@ int main(int argc, char* argv[])
     int temp_comp = get_temp_index(var_names_pf);
     int spec_comp = get_spec_index(var_names_pf);
 
-    // we will use a mask that tells us if a zone on the current level
-    // is covered by data on a finer level.
-
     amrex::Real sprad_max{-1.0};
     burn_t burn_state_max;
 
     for (int ilev = 0; ilev <= fine_level; ++ilev) {
 
-        if (ilev < fine_level) {
-            IntVect ratio{pf.refRatio(ilev)};
-            for (int idim = dim; idim < AMREX_SPACEDIM; ++idim) {
-                ratio[idim] = 1;
-            }
-            const iMultiFab mask = makeFineMask(pf.boxArray(ilev), pf.DistributionMap(ilev),
-                                                pf.boxArray(ilev+1), ratio);
-
-            const MultiFab& lev_data_mf = pf.get(ilev);
-
-            for (MFIter mfi(lev_data_mf); mfi.isValid(); ++mfi) {
-                const Box& bx = mfi.validbox();
-                if (bx.ok()) {
-                    const auto& m = mask.array(mfi);
-                    const auto& fab = lev_data_mf.array(mfi);
-                    const auto lo = amrex::lbound(bx);
-                    const auto hi = amrex::ubound(bx);
-
-                    for (int k = lo.z; k <= hi.z; ++k) {
-                        for (int j = lo.y; j <= hi.y; ++j) {
-                            for (int i = lo.x; i <= hi.x; ++i) {
-
-                                burn_t burn_state;
-
-                                burn_state.rho = fab(i,j,k,dens_comp);
-                                burn_state.T = fab(i,j,k,temp_comp);
-                                for (int n = 0; n < NumSpec; ++n) {
-                                    burn_state.xn[n] = fab(i,j,k,spec_comp+n);
-                                }
-
-                                // we also need internal energy
-                                eos(eos_input_rt, burn_state);
-                                burn_state.e_scale = burn_state.e;
-
-                                // we need to load up the integrator type
-                                constexpr int int_neqs = integrator_neqs<burn_t>();
-                                rkc_t<int_neqs> rstate;
-                                burn_to_integrator(burn_state, rstate);
-                                rstate.t = 0.0;
-
-                                amrex::Real sprad{};
-                                circle_theorem_sprad(rstate.t, burn_state, rstate, sprad);
-
-                                if (sprad > sprad_max) {
-                                    sprad_max = sprad;
-                                    burn_state_max = burn_state;
-                                }
-                            }
-                        }
-                    }
-
-                } // bx.ok()
-
-            } // MFIter
-
-        } else {
-            // this is the finest level
-
-            const MultiFab& lev_data_mf = pf.get(ilev);
-
-            for (MFIter mfi(lev_data_mf); mfi.isValid(); ++mfi) {
-                const Box& bx = mfi.validbox();
-                if (bx.ok()) {
-                    const auto& fab = lev_data_mf.array(mfi);
-                    const auto lo = amrex::lbound(bx);
-                    const auto hi = amrex::ubound(bx);
-
-                    for (int k = lo.z; k <= hi.z; ++k) {
-                        for (int j = lo.y; j <= hi.y; ++j) {
-                            for (int i = lo.x; i <= hi.x; ++i) {
-
-                                eos_t eos_state;
-
-                                eos_state.rho = fab(i,j,k,dens_comp);
-                                eos_state.T = fab(i,j,k,temp_comp);
-                                for (int n = 0; n < NumSpec; ++n) {
-                                    eos_state.xn[n] = fab(i,j,k,spec_comp+n);
-                                }
-
-                                eos(eos_input_rt, eos_state);
-
-                            }
-                        }
-                    }
-
-                } // bx.ok()
-
-            } // MFIter
-
-
+        IntVect ratio{pf.refRatio(ilev)};
+        for (int idim = dim; idim < AMREX_SPACEDIM; ++idim) {
+            ratio[idim] = 1;
         }
+
+        const MultiFab& lev_data_mf = pf.get(ilev);
+
+        for (MFIter mfi(lev_data_mf); mfi.isValid(); ++mfi) {
+            const Box& bx = mfi.validbox();
+            if (bx.ok()) {
+                const auto& fab = lev_data_mf.array(mfi);
+                const auto lo = amrex::lbound(bx);
+                const auto hi = amrex::ubound(bx);
+
+                for (int k = lo.z; k <= hi.z; ++k) {
+                    for (int j = lo.y; j <= hi.y; ++j) {
+                        for (int i = lo.x; i <= hi.x; ++i) {
+
+                            burn_t burn_state;
+
+                            burn_state.rho = fab(i,j,k,dens_comp);
+                            burn_state.T = fab(i,j,k,temp_comp);
+                            for (int n = 0; n < NumSpec; ++n) {
+                                burn_state.xn[n] = fab(i,j,k,spec_comp+n);
+                            }
+
+                            // we also need internal energy
+                            eos(eos_input_rt, burn_state);
+                            burn_state.e_scale = burn_state.e;
+
+                            // we need to load up the integrator type
+                            constexpr int int_neqs = integrator_neqs<burn_t>();
+                            rkc_t<int_neqs> rstate;
+                            burn_to_integrator(burn_state, rstate);
+                            rstate.t = 0.0;
+
+                            amrex::Real sprad{};
+                            circle_theorem_sprad(rstate.t, burn_state, rstate, sprad);
+
+                            if (std::abs(sprad) > sprad_max) {
+                                sprad_max = std::abs(sprad);
+                                burn_state_max = burn_state;
+                            }
+                        }
+                    }
+                }
+
+            } // bx.ok()
+
+        } // MFIter
 
     } // level loop
 
-
+    std::cout << "maximum spectral radius = " << sprad_max << std::endl;
+    std::cout << burn_state_max << std::endl;
 
     // destroy timer for profiling
     BL_PROFILE_VAR_STOP(pmain);
