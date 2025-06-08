@@ -122,7 +122,11 @@ int main(int argc, char* argv[])
     } // level loop
 
     std::cout << "maximum spectral radius = " << sprad_max << std::endl;
-    std::cout << burn_state_max << std::endl;
+    std::cout << "T = " << burn_state_max.T << std::endl;
+    std::cout << "rho = " << burn_state_max.rho << std::endl;
+    for (int n = 0; n < NumSpec; ++n) {
+        std::cout << "X(" << short_spec_names_cxx[n] << ") = " << burn_state_max.xn[n] << std::endl;
+    }
 
     // destroy timer for profiling
     BL_PROFILE_VAR_STOP(pmain);
