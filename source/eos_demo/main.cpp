@@ -1,6 +1,5 @@
 //
-// Process a sedov problem to produce rho, u, and p as a
-// function of r, for comparison to the analytic solution.
+// Demonstrate how to call the EOS on every zone in a plotfile.
 //
 #include <iostream>
 // #include <stringstream>
