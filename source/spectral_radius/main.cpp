@@ -1,6 +1,7 @@
 //
-// Process a sedov problem to produce rho, u, and p as a
-// function of r, for comparison to the analytic solution.
+// loop over zones and compute the spectral radius of the reaction
+// network Jacobian and then output the thermodynamic state of the
+// zone with the largest spectral radius.
 //
 #include <iostream>
 // #include <stringstream>
