@@ -26,7 +26,7 @@ EBASE := sprad
 EOS_DIR := helmholtz
 
 # this should match what we used for the simulation
-NETWORK_DIR := nova-li
+NETWORK_DIR := nova
 
 # this should be RKC so we have access to the circle theorem function
 INTEGRATOR_DIR := RKC

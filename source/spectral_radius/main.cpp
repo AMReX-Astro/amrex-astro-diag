@@ -17,6 +17,10 @@
 
 #include <network.H>
 #include <eos.H>
+#include <burn_type.H>
+#include <rkc_type.H>
+#include <integrator_data.H>
+#include <circle_theorem.H>
 
 using namespace amrex;
 
@@ -62,6 +66,9 @@ int main(int argc, char* argv[])
     // we will use a mask that tells us if a zone on the current level
     // is covered by data on a finer level.
 
+    amrex::Real sprad_max{-1.0};
+    burn_t burn_state_max;
+
     for (int ilev = 0; ilev <= fine_level; ++ilev) {
 
         if (ilev < fine_level) {
@@ -86,26 +93,31 @@ int main(int argc, char* argv[])
                         for (int j = lo.y; j <= hi.y; ++j) {
                             for (int i = lo.x; i <= hi.x; ++i) {
 
-                                // if we only wanted to work on the zones not covered
-                                // by finer grids (e.g., for computing a global sum)
-                                // we'd uncomment this mask check
+                                burn_t burn_state;
 
-                                //if (m(i,j,k) == 0) { // not covered by fine
-
-                                // compute the coordinate of the current zone
-
-                                eos_t eos_state;
-
-                                eos_state.rho = fab(i,j,k,dens_comp);
-                                eos_state.T = fab(i,j,k,temp_comp);
+                                burn_state.rho = fab(i,j,k,dens_comp);
+                                burn_state.T = fab(i,j,k,temp_comp);
                                 for (int n = 0; n < NumSpec; ++n) {
-                                    eos_state.xn[n] = fab(i,j,k,spec_comp+n);
+                                    burn_state.xn[n] = fab(i,j,k,spec_comp+n);
                                 }
 
-                                eos(eos_input_rt, eos_state);
+                                // we also need internal energy
+                                eos(eos_input_rt, burn_state);
+                                burn_state.e_scale = burn_state.e;
 
-                                // } // mask
+                                // we need to load up the integrator type
+                                constexpr int int_neqs = integrator_neqs<burn_t>();
+                                rkc_t<int_neqs> rstate;
+                                burn_to_integrator(burn_state, rstate);
+                                rstate.t = 0.0;
 
+                                amrex::Real sprad{};
+                                circle_theorem_sprad(rstate.t, burn_state, rstate, sprad);
+
+                                if (sprad > sprad_max) {
+                                    sprad_max = sprad;
+                                    burn_state_max = burn_state;
+                                }
                             }
                         }
                     }
