@@ -149,29 +149,7 @@ get_dens_index(const std::vector<std::string>& var_names_pf) {
 
     auto idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "density");
     if (idx == var_names_pf.cend()) {
-        // MAESTROeX uses "rho"
-        idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "rho");
-        if (idx == var_names_pf.cend()) {
-            amrex::Error("Error: could not find the density component");
-        }
-    }
-    return std::distance(var_names_pf.cbegin(), idx);
-}
-
-///
-/// return the index of the temperature variable by searching through
-/// the list of variables in the plotfile.
-///
-inline int
-get_temp_index(const std::vector<std::string>& var_names_pf) {
-
-    auto idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "Temp");
-    if (idx == var_names_pf.cend()) {
-        // for MAESTROeX, we'll default to "tfromp"
-        idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "tfromp");
-        if (idx == var_names_pf.cend()) {
-            amrex::Error("Error: could not find the temperature component");
-        }
+        amrex::Error("Error: could not find the density component");
     }
     return std::distance(var_names_pf.cbegin(), idx);
 }
@@ -185,15 +163,62 @@ get_pres_index(const std::vector<std::string>& var_names_pf) {
 
     auto idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "pressure");
     if (idx == var_names_pf.cend()) {
-        // for MAESTROeX, we'll default to "p0"
-        idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "p0pluspi");
-        if (idx == var_names_pf.cend()) {
             amrex::Error("Error: could not find the pressure component");
-        }
     }
     return std::distance(var_names_pf.cbegin(), idx);
 }
 
+///
+/// return the index of the energy variable by searching through
+/// the list of variables in the plotfile, keeping the EOS one.
+///
+inline int
+get_energy_index(const std::vector<std::string>& var_names_pf) {
+
+    auto idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "total_energy_density");
+    if (idx == var_names_pf.cend()) {
+        amrex::Error("Error: could not find the enthalpy");
+    }
+    return std::distance(var_names_pf.cbegin(), idx);
+}
+
+///
+/// return the index of the x-velocity variable by searching through
+/// the list of variables in the plotfile.
+///
+inline int
+get_ux_index(const std::vector<std::string>& var_names_pf) {
+
+    auto idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "x_velocity");
+    if (idx == var_names_pf.cend()) {
+        amrex::Error("Error: could not find the x-velocity component");
+    }
+    return std::distance(var_names_pf.cbegin(), idx);
+}
+
+///
+/// return the index of the x-velocity variable by searching through
+/// the list of variables in the plotfile.
+///
+inline int
+get_uy_index(const std::vector<std::string>& var_names_pf) {
+
+    auto idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "y_velocity");
+    if (idx == var_names_pf.cend()) {
+        amrex::Error("Error: could not find the y-velocity component");
+    }
+    return std::distance(var_names_pf.cbegin(), idx);
+}
+
+inline int
+get_diff_index(const std::vector<std::string>& var_names_pf) {
+
+    auto idx = std::find(var_names_pf.cbegin(), var_names_pf.cend(), "diff_term");
+    if (idx == var_names_pf.cend()) {
+        amrex::Error("Error: could not find the diff_term");
+    }
+    return std::distance(var_names_pf.cbegin(), idx);
+}
 
 ///
 /// return the index of the first species component by searching through
@@ -226,5 +251,3 @@ get_spec_index(const std::vector<std::string>& var_names_pf) {
 }
 
 #endif
-
-

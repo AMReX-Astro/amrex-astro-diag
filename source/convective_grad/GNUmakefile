@@ -15,7 +15,7 @@ USE_OMP = FALSE
 USE_REACT = TRUE
 USE_CXX_EOS = TRUE
 
-MAX_ZONES := 16384
+MAX_ZONES := 20000
 
 DEFINES += -DNPTS_MODEL=$(MAX_ZONES)
 
@@ -25,7 +25,7 @@ EBASE := fconvgrad
 # EOS and network
 EOS_DIR := helmholtz
 
-NETWORK_DIR := aprox13
+NETWORK_DIR := nova2
 #NETWORK_INPUTS := triple_alpha_plus_o.net
 
 Bpack := ./Make.package
